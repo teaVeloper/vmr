@@ -1,7 +1,7 @@
 # vmr - **v**irtual environment **m**anage**r**
 
 **WORK IN PROGRESS**
-this is currently a DRAFT only, until the API design and its implementation is finished, this is a teaser of what i
+This is currently a DRAFT only, until the API design and its implementation is finished, this is a teaser of what i
 want, and nothing else!
 Once I am there, this Note will vanish.
 -----
@@ -16,8 +16,8 @@ Still it is heavily inspired by its Ideas and its worth checking out!
 
 ## Installation
 
-The easiest and recommended way is using 'pipx'
-```
+The easiest and recommended way is using 'pipx':
+```sh
 pipx install vmr
 ```
 
@@ -181,7 +181,7 @@ then above will prompt an error and list the two available ones, asking to suppl
 
 ### Create a tempenv
 
-`vmr tempenv` - creates a venv in `/tmp` (or else if configured differently) and activates it, for direct usage.
+`vmr tmpenv` - creates a venv in `/tmp` (or else if configured differently) and activates it, for direct usage.
 
 ### list venvs
 
@@ -193,7 +193,174 @@ then above will prompt an error and list the two available ones, asking to suppl
 
 
 ## Configuration
+
+'vmr' uses a config file in `toml` format, many of the 'core' options can be overwritten or alternatively set via
+'environment variables'. 
+On command call most of these options can also be set explicitely via 'cli flags'
+
+precedence thus is:
+'CLI Tags' > 'Environment Variables' > Config File.
+
+Config from local `pyproject.toml` files will only be used (and overwrites global config file and environment variables)
+if the option for local settings is set.
+
+**Config location:** 'vmr' will search first if exists in `$VMR_CONFIG_HOME` if this varible is not set it will try
+`$XDG_CONFIG_HOME/vmr` and if this is not set then `~/.config/vmr`.
+
+The config-file can be named either `vmr.toml` or `config.toml`, but if both exist then `vmr.toml` will be used.
+
+Here I will summarize the options that are defined per default and their settings, and the organization of the
+config-file. No CLI-Flags will be mentioned here.
+
+The notion 'backend' is a programm used to create a virtualenv. With 'driver' a supplier of python versions is meant.
+Any options for the supported backends and drivers are given through to the subprocesses.
+
+Here is a basic outline of the toml fields.
+```toml
+[global]
+# Global configs
+[activate]
+# Configs per command
+[create]
+[rm]
+[ui]
+# Config UI
+[backend]
+# configuring backend
+[backend.uv]
+# Configs per backend
+[backend.virtualenv]
+[driver]
+# configuring driver
+[driver.asdf]
+# configs per driver
+[driver.system]
+```
+
+**VENV_PATH**
+`global.venv_path` - `VMR_VENV_PATH` - `$XDG_DATA_HOME/vmr/venvs` if not set `~/.local/share/vmr/venvs`
+
+**DEFAULT PACKAGES**
+there are 2 Options, if both are set, both will be used - thus the packages in the list and the ones in the
+'requirements file' will be installed.
+`global.default_packges` a list
+`global.default_requirements` - the path to a `requirements.txt` - `VMR_DEFAULT_REQUIREMENTS`
+
+**EXAMPLE**
+```toml
+[global]
+venv_path = "$XDG_DATA_HOME/vmr/virtualenvs"
+default_packages = ["ipython", "ptpython"]
+default_requirements = "$VMR_CONFIG_HOME/requirements.txt"
+```
+
+
+
 ## Reference
+
+### Commands
+
+#### create
+Create a virtual environment
+
+#### activate
+activate a virtual environment
+
+#### deactivate
+deactivate the currently active virtual environment
+
+#### rm
+delete a virtual environment
+
+#### list
+list all available virtual environments
+
+#### healthcheck
+make a healthcheck of the config and print a summary.
+
+#### tmpenv
+create a temporary virtual env (unnamed)
+garbage collect stale data
+
+#### inherit
+create a virtual environment, that inherits from an existing one, thus it uses the parents package 'site-packages'
+
+#### copy
+copy a virtual environment (not sure of usability)
+
+#### shellenv
+print the necessary lines that need to be sourced by a users shell
+
+#### cdenv
+change into the directory of a virtual environment
+
+#### path
+print the path of a virtual environment
+
+#### lsenv
+list the contents of a virtual environments site-packages subfolder
+
+#### lslinks
+list linked projects of a virtual environment (this options would need the mapping in plain text not hash, but nothing
+speaks against this?).
+
+#### linkedenvs
+list all linked virtual environments to a path
+
+### local path resolution and linking
+If a command is utilized using the local path and using it to link or fetch linking information the path will resolved
+as follows.
+
+It will search from `.` its parents until it either finds a (in this order) `pyproject.toml`, `setup.cfg`, `setup.py` or `.git` and use
+the folder containing the found item. If nothing is found until reaching `~` then the current folder will be used.
+
+
+### Interactive
+
+There are interactive versions of commands, they are meant to be used with aliases, much inspired by
+[forgit](https://github.com/wfxr/forgit).
+
+They can be opted in or out, as you might want to choose your aliases.
+
+Their full commands are shell functions names 
+`vmr_i_$function` with the 'i' for interactive.
+
+for these we have aliases, that utilize a 'fuzzyfinder ui' and show you dropdown menus or other interactive niceties.
+
+`vma` - vmr activate
+`vmc` - vmr create
+`vml` - vmr list
+`vmd` - vmr deactivate (just a shell alias)
+`vmrm` - vmr rm
+`vmcp` - vmr copy
+`vmi` - vmr inherit
+
+
+### Config
+
+
+
+Configuration can be global or per command. Environment variables or CLI flags that change behavior are also mentioned.
+
+Some options are global but do not make sense for each command; this is not mentioned here.
+
+| Command    | Config          | Environment          | CLI              | Default                              | Description                                          |
+|------------|-----------------|----------------------|------------------|--------------------------------------|------------------------------------------------------|
+| create     | backend         | VMR_BACKEND          | --backend        | uv                                   | The backend to use for creating virtual environments |
+| activate   | venv_path       | VMR_VENV_PATH        | --venv-path      | $XDG_DATA_HOME/vmr/venvs             | The path to the virtual environments                 |
+| rm         | force           | VMR_RM_FORCE         | --force          | false                                | Force deletion without confirmation                  |
+| list       | show_paths      | VMR_LIST_SHOW_PATHS  | --show-paths     | false                                | Show paths in the list output                        |
+| healthcheck|                 |                      |                  |                                      |                                                      |
+| tmpenv     | tmp_path        | VMR_TMP_PATH         | --tmp-path       | /tmp                                 | Path for temporary environments                      |
+| gc         | retention_days  | VMR_GC_RETENTION_DAYS| --retention-days | 30                                   | Number of days to retain environments                |
+| inherit    | base_venv       | VMR_INHERIT_BASE     | --base-venv      |                                      | The base virtual environment to inherit from         |
+| copy       |                 |                      |                  |                                      |                                                      |
+| shellenv   |                 |                      |                  |                                      |                                                      |
+| cdenv      |                 |                      |                  |                                      |                                                      |
+| path       |                 |                      |                  |                                      |                                                      |
+| lsenv      |                 |                      |                  |                                      |                                                      |
+| lslinks    |                 |                      |                  |                                      |                                                      |
+| linkedenvs |                 |                      |                  |                                      |                                                      |
 
 ## Issues
 
