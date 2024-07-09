@@ -263,49 +263,107 @@ default_requirements = "$VMR_CONFIG_HOME/requirements.txt"
 #### create
 Create a virtual environment
 
+`vmr create [name] [--venv-path <path>] [--python </path/to/python> | <3.8> | < 3.9.17> ] [--[no-]link] [--[no-]local]
+[--no-defaults] [--inherit <venv-name>] [--system-site-packages] [--upgrade-deps] [--clear]`
+
+internal alias `mk`.
+
 #### activate
 activate a virtual environment
+
+`vmr activate [name] [--venv-path <path>] [--[no-]local]`
+
+internal alias `a`.
 
 #### deactivate
 deactivate the currently active virtual environment
 
+`vmr deactivate`
+
+internal alias `d`
+
+#### run
+run any command from within the virtual environment.
+
+`vmr run [name] <command with options>`
+
+
 #### rm
 delete a virtual environment
+`vmr rm [name] [--[no-]local] [--yes|-y]`
 
 #### list
 list all available virtual environments
 
+`vmr list [--venv-path <path>] [--py <version>] [<glob>|<venv-name>] [--summary] [--verbose|-v]`
+
+'verbose' will print additional information, possibly with a 'pager'
+
 #### healthcheck
 make a healthcheck of the config and print a summary.
+`vmr healthckeck`
 
 #### tmpenv
 create a temporary virtual env (unnamed)
+
+`vmr tmpenv [--python </path/to/python> | <3.8> | < 3.9.17> ] [--no-defaults] [--inherit <venv-name>] [--system-site-packages] [--upgrade-deps]`
+
+#### gc
 garbage collect stale data
+
+`vmr gc [--yes|-y] [--retention <time-days>] [--[no-]include-old]`
 
 #### inherit
 create a virtual environment, that inherits from an existing one, thus it uses the parents package 'site-packages'
+or remove inheritance from a package.
+
+`vmr inherit [name] --[un-]inherit <package>`
+
+will add/remove inheritance if a 'virtualenv' exists, create if it does not exist. 
+More options for creation in `vmr create --inherit` so this command is exposing different API.
 
 #### copy
 copy a virtual environment (not sure of usability)
 
+`vmr copy [name] [other-virtualenv]`
+**EXPERIMENTAL IDEA** maybe not implemented!
+
 #### shellenv
 print the necessary lines that need to be sourced by a users shell
+
+`vmr shellenv [--interactive] [--copy <destination-path>] [--completion] [--modify]`
 
 #### cdenv
 change into the directory of a virtual environment
 
+`vmr cdenv [name] [--bin] [--site-package] [--share] [--lib]`
+
 #### path
 print the path of a virtual environment
 
+`vmr path [name] [--bin] [--site-package] [--share] [--lib] [--python] [--pip] [--app <name>]`
+
 #### lsenv
 list the contents of a virtual environments site-packages subfolder
+
+`vmr lsenv [name] [--pip-list] [--pip-freeze] [--verbose|-v] [--summary]`
 
 #### lslinks
 list linked projects of a virtual environment (this options would need the mapping in plain text not hash, but nothing
 speaks against this?).
 
+`vmr lslinks <name> [--verbose|-v] [--summary]`
+
 #### linkedenvs
 list all linked virtual environments to a path
+
+`vmr linkedenvs [path] [--verbose|-v] [--summary]`
+
+#### link
+link a folder and a virtual env
+
+`vmr link [path] <virtualenv> [--remove] [--yes|-y]`
+
 
 ### local path resolution and linking
 If a command is utilized using the local path and using it to link or fetch linking information the path will resolved
@@ -323,7 +381,7 @@ There are interactive versions of commands, they are meant to be used with alias
 They can be opted in or out, as you might want to choose your aliases.
 
 Their full commands are shell functions names 
-`vmr_i_$function` with the 'i' for interactive.
+`vmr::$function` thus `vmr::activate` etc..
 
 for these we have aliases, that utilize a 'fuzzyfinder ui' and show you dropdown menus or other interactive niceties.
 
@@ -335,9 +393,20 @@ for these we have aliases, that utilize a 'fuzzyfinder ui' and show you dropdown
 `vmcp` - vmr copy
 `vmi` - vmr inherit
 
+each of those will work with arguments mostly like the 'static' counterpart, but without input there will be a selector
+for the options coming.
+
 
 ### Config
 
+draft options:
+`touch_on_activate=true`
+`ignore_local_config=false`
+`local_dotvenv_name=.venv`
+`use_local_dotvenv=false`
+`local_map=false`
+`local_map_file=.venv-map` # a file to map a venv name, this will then unambigously map a project to a venv and be
+activated if no name is given, file could be added in global `.gitignore`
 
 
 Configuration can be global or per command. Environment variables or CLI flags that change behavior are also mentioned.
@@ -388,6 +457,7 @@ This is an application nothing should be dependent on, so 'CalVer' seems like a 
 - maybe rewrite in a more performant language than python - also to have it more isolated from python.
 - support plugins, for different tools not supported by 'core'
 - move supported tools from 'core' to plugins to have easier adaption to changes?
+- maybe add some environment variables tied to each virtualenv, activated together
 
 
 ## Authors
